@@ -13,7 +13,10 @@ class File:
 Task 1
 """
 def leafFiles(files: list[File]) -> list[str]:
+    # first get parents
     parents = set(file.parent for file in files)
+
+    # then include every file that's not a parent
     return [file.name for file in files if file.id not in parents]
 
 
@@ -21,6 +24,7 @@ def leafFiles(files: list[File]) -> list[str]:
 Task 2
 """
 def kLargestCategories(files: list[File], k: int) -> list[str]:
+    # get category to file mapping
     categories = {}
     for file in files:
         for category in file.categories:
@@ -29,6 +33,7 @@ def kLargestCategories(files: list[File], k: int) -> list[str]:
             else:
                 categories[category] += 1
 
+    # sort categories by descending size and ascneding alpha
     return sorted(
         categories.keys(), key=lambda category : (-categories[category], category)
     )[:k]
@@ -38,26 +43,28 @@ def kLargestCategories(files: list[File], k: int) -> list[str]:
 Task 3
 """
 def largestFileSize(files: list[File]) -> int:
+    # guard check
     if len(files) == 0:
         return 0
 
-    children = {}
-    def fileSize(file):
-        return children[file][1] + sum(map(fileSize, children[file][0]))
+    @dataclass
+    class FileNode:
+        def __init__(self, size: int):
+            self.size = size
+            self.children = []
 
+    # recursively gets size of file
+    def fileSize(file: int):
+        return fileTree[file].size + sum(map(fileSize, fileTree[file].children))
+
+    # create tree storing file children and file size
+    fileTree = {-1: FileNode(0)}
     for file in files:
-        parent = file.parent
-        curr = file.id
-        if parent not in children:
-            children[parent] = [[file.id], 0]
-        else:
-            children[parent][0].append(file.id)
-        if curr not in children:
-            children[curr] = [[], file.size]
-        else:
-            children[curr][1] = file.size
-
-    return max(map(fileSize, children[-1][0]))
+        fileTree[file.id] = FileNode(file.size)
+    for file in files:
+        fileTree[file.parent].children.append(file.id)
+    
+    return max(map(fileSize, fileTree[-1].children))
 
 
 if __name__ == '__main__':
